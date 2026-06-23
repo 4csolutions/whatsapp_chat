@@ -141,11 +141,24 @@ def last_message(doc, method):
         chat_doc.is_read = 0
         chat_doc.save(ignore_permissions=True)
     else:
+        WhatsAppProfiles = frappe.qb.DocType("WhatsApp Profiles")
+        base_number = mobile_no[-10:] if mobile_no and len(mobile_no) >= 10 else mobile_no
+        
+        profile = (
+            frappe.qb.from_(WhatsAppProfiles)
+            .select(WhatsAppProfiles.profile_name)
+            .where(WhatsAppProfiles.number.like(f"%{base_number}"))
+            .limit(1)
+            .run(as_dict=True)
+        )
+        
+        final_contact_name = profile[0].profile_name if profile and profile[0].profile_name else mobile_no
+
         chat_doc = frappe.get_doc({
             "doctype": "WhatsApp Contact",
             "mobile_no": mobile_no,
             "last_message": doc.message,
-            "contact_name": mobile_no,
+            "contact_name": final_contact_name,
             "is_read": 0
         })
         chat_doc.save(ignore_permissions=True)
