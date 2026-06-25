@@ -163,7 +163,7 @@ def last_message(doc, method):
         })
         chat_doc.save(ignore_permissions=True)
 
-    if chat_doc.email and doc.type != 'Outgoing':
+    if doc.type != 'Outgoing':
         message_data = {
             "content": doc.message or doc.attach or '',
             "creation": frappe.utils.now(),
@@ -172,17 +172,29 @@ def last_message(doc, method):
             "sender_user_no": mobile_no,
             "user": "Guest"
         }
-        # Notify chat list
-        frappe.publish_realtime(
-            "latest_chat_updates",
-            message_data,
-            user=chat_doc.email
-        )
-        # Notify open chat room
-        frappe.publish_realtime(
-            chat_doc.name,
-            message_data,
-            user=chat_doc.email
-        )
+        if chat_doc.email:
+            # Notify chat list
+            frappe.publish_realtime(
+                "latest_chat_updates",
+                message_data,
+                user=chat_doc.email
+            )
+            # Notify open chat room
+            frappe.publish_realtime(
+                chat_doc.name,
+                message_data,
+                user=chat_doc.email
+            )
+        else:
+            # Notify chat list (broadcast to all)
+            frappe.publish_realtime(
+                "latest_chat_updates",
+                message_data
+            )
+            # Notify open chat room (broadcast to all)
+            frappe.publish_realtime(
+                chat_doc.name,
+                message_data
+            )
 
     return "ok"
